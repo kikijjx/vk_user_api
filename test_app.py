@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from app import app
+from app import app, SECRET_TOKEN, neo4j_handler
+
+TEST_TOKEN = SECRET_TOKEN
+TEST_PASSWORD = neo4j_handler
 
 client = TestClient(app)
 
@@ -16,13 +19,14 @@ def create_test_user():
         "follows": [],
         "subscribed": []
     }
-    headers = {"Authorization": "Bearer tokenchik"}
+
+    headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
     response = client.post("/nodes", json=test_user_data, headers=headers)
     assert response.status_code == 200
     return test_user_data
 
 def test_get_user(create_test_user):
-    headers = {"Authorization": "Bearer tokenchik"}
+    headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
     response = client.get("/user/12345", headers=headers)
     assert response.status_code == 200
     assert response.json() == {
@@ -59,14 +63,12 @@ def test_get_all_nodes():
     assert isinstance(response.json(), list)
 
 def test_delete_node_and_relations(create_test_user):
-    headers = {"Authorization": "Bearer tokenchik"}
+    headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
 
     response = client.get("/user/12345", headers=headers)
     assert response.status_code == 200
-
     response = client.delete("/nodes/User/12345", headers=headers)
     assert response.status_code == 200
     assert response.json() == {"status": "success"}
-
     response = client.get("/user/12345", headers=headers)
     assert response.status_code == 404

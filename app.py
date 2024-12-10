@@ -116,10 +116,10 @@ class RelationshipData(BaseModel):
     attributes: Dict[str, Any]
 
 app = FastAPI()
-neo4j_handler = Neo4jHandler(uri="neo4j://localhost:7687", user="neo4j", password="11111111")
 
 security = HTTPBearer()
-SECRET_TOKEN = "tokenchik"
+neo4j_handler = Neo4jHandler(uri="neo4j://localhost:7687", user="neo4j", password="11111111")
+SECRET_TOKEN: str = "tokenchik"
 
 def token_is_valid(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if credentials.credentials != SECRET_TOKEN:
@@ -315,4 +315,16 @@ async def delete_node_and_relations(label: str, node_id: int, token: str = Depen
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--uri", type=str, default="neo4j://localhost:7687", help="URI подключения к Neo4j")
+    parser.add_argument("--user", type=str, default="neo4j", help="Имя пользователя Neo4j")
+    parser.add_argument("--password", type=str, required=True, help="Пароль пользователя Neo4j")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Хост для запуска")
+    parser.add_argument("--port", type=int, default=8000, help="Порт для запуска")
+    parser.add_argument("--token", type=str, required=True, help="Токен авторизации")
+
+    args = parser.parse_args()
+    SECRET_TOKEN = args.token
+    neo4j_handler = Neo4jHandler(uri=args.uri, user=args.user, password=args.password)
+
+    uvicorn.run(app, host=args.host, port=args.port)
