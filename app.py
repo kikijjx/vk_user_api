@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from neo4j import GraphDatabase
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level='INFO', format='%(asctime)s [%(levelname)s]: %(message)s')
 logger = logging.getLogger(__name__)
@@ -115,8 +116,18 @@ class RelationshipData(BaseModel):
     relationship_type: str
     attributes: Dict[str, Any]
 
+origins = [
+    "http://localhost:5173"
+]
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 security = HTTPBearer()
 neo4j_handler = Neo4jHandler(uri="neo4j://localhost:7687", user="neo4j", password="11111111")
 SECRET_TOKEN: str = "tokenchik"
@@ -284,8 +295,6 @@ async def create_node_and_relationships(node_data: dict = None, token: str = Dep
             neo4j_handler.run_query(subscribe_query, {"id": node_data["id"], "subscribe_id": subscribe_id})
 
     return {"status": "success"}
-
-
 
 @app.delete("/nodes/{label}/{node_id}")
 async def delete_node_and_relations(label: str, node_id: int, token: str = Depends(token_is_valid)):
